@@ -1,0 +1,9 @@
+# .air.toml
+
+[build]
+cmd = "go build -o ./bin/main ./cmd/api"
+bin = "./bin/main"
+full_bin = "./bin/main --debug true"
+
+[log]
+color = "true"
