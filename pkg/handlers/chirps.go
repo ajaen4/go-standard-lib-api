@@ -15,7 +15,7 @@ type PostChirpReq struct {
 	Body string `json:"body"`
 }
 
-func (chirpReq *PostChirpReq) validate(r *http.Request) error {
+func (chirpReq *PostChirpReq) validate(r *http.Request) *api_errors.ClientErr {
 	err := json.NewDecoder(r.Body).Decode(chirpReq)
 	if err != nil {
 		return &api_errors.ClientErr{
@@ -45,14 +45,14 @@ type GetChirpsReq struct {
 	sortBy   string
 }
 
-func (req *GetChirpsReq) validate(request *http.Request) error {
+func (req *GetChirpsReq) validate(r *http.Request) *api_errors.ClientErr {
 	apiErr := &api_errors.ClientErr{
 		HttpCode: http.StatusBadRequest,
 		Message:  "invalid request params",
 		Errors:   map[string]string{},
 	}
 
-	authorId := request.URL.Query().Get("author_id")
+	authorId := r.URL.Query().Get("author_id")
 	if authorId != "" {
 		authorIdInt, err := strconv.Atoi(authorId)
 		if err != nil {
@@ -62,7 +62,7 @@ func (req *GetChirpsReq) validate(request *http.Request) error {
 		}
 	}
 
-	sortBy := request.URL.Query().Get("sort")
+	sortBy := r.URL.Query().Get("sort")
 	if sortBy == "" {
 		sortBy = "asc"
 	}
@@ -82,14 +82,14 @@ type ChirpReq struct {
 	chirpID int
 }
 
-func (req *ChirpReq) validate(request *http.Request) error {
+func (req *ChirpReq) validate(r *http.Request) *api_errors.ClientErr {
 	apiErr := &api_errors.ClientErr{
 		HttpCode: http.StatusBadRequest,
 		Message:  "invalid request params",
 		Errors:   map[string]string{},
 	}
 
-	reqChirpID := request.PathValue("chirpID")
+	reqChirpID := r.PathValue("chirpID")
 	chirpID, err := strconv.Atoi(reqChirpID)
 	if reqChirpID == "" || err != nil {
 		apiErr.Errors["chirpID"] = "ChirpID not provided or invalid"
@@ -103,8 +103,8 @@ func (req *ChirpReq) validate(request *http.Request) error {
 	return nil
 }
 
-func (apiCfg *ApiConfig) PostChirp(w http.ResponseWriter, request *http.Request) error {
-	authHeader := request.Header.Get("Authorization")
+func (apiCfg *ApiConfig) PostChirp(w http.ResponseWriter, r *http.Request) error {
+	authHeader := r.Header.Get("Authorization")
 	tokenStr := strings.Replace(authHeader, "Bearer ", "", 1)
 	token, err := encryption.ValidateToken(tokenStr, apiCfg.JwtSecret)
 	if err != nil {
@@ -128,7 +128,7 @@ func (apiCfg *ApiConfig) PostChirp(w http.ResponseWriter, request *http.Request)
 	}
 
 	chirpReq := &PostChirpReq{}
-	err = chirpReq.validate(request)
+	err = chirpReq.validate(r)
 	if err != nil {
 		return err
 	}
@@ -178,9 +178,9 @@ func (apiCfg *ApiConfig) GetChirps(w http.ResponseWriter, request *http.Request)
 
 func (apiCfg *ApiConfig) GetChirp(w http.ResponseWriter, request *http.Request) error {
 	chirpReq := ChirpReq{}
-	err := chirpReq.validate(request)
-	if err != nil {
-		return err
+	clientErr := chirpReq.validate(request)
+	if clientErr != nil {
+		return clientErr
 	}
 
 	chirp, err := apiCfg.DB.GetChirp(chirpReq.chirpID)
@@ -192,8 +192,8 @@ func (apiCfg *ApiConfig) GetChirp(w http.ResponseWriter, request *http.Request) 
 	return nil
 }
 
-func (apiCfg *ApiConfig) DeleteChirp(w http.ResponseWriter, request *http.Request) error {
-	authHeader := request.Header.Get("Authorization")
+func (apiCfg *ApiConfig) DeleteChirp(w http.ResponseWriter, r *http.Request) error {
+	authHeader := r.Header.Get("Authorization")
 	tokenStr := strings.Replace(authHeader, "Bearer ", "", 1)
 	token, err := encryption.ValidateToken(tokenStr, apiCfg.JwtSecret)
 	if err != nil {
@@ -217,7 +217,7 @@ func (apiCfg *ApiConfig) DeleteChirp(w http.ResponseWriter, request *http.Reques
 	}
 
 	chirpReq := ChirpReq{}
-	err = chirpReq.validate(request)
+	err = chirpReq.validate(r)
 	if err != nil {
 		return err
 	}

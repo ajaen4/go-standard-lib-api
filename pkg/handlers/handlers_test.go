@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/ajaen4/go-standard-lib-api/pkg/api_errors"
 )
 
 func TestHealthCheck(t *testing.T) {
@@ -56,12 +58,11 @@ func TestNewHandler(t *testing.T) {
 	}
 
 	Okw := httptest.NewRecorder()
-	OKResponse := errorResponse{}
 	NewHandler(OKHandler).ServeHTTP(Okw, OKreq)
 	if Okw.Body.Len() != 0 {
 		t.Errorf(
 			"handler returned wrong error response: got %v want an empty response",
-			OKResponse,
+			Okw.Body,
 		)
 	}
 
@@ -75,11 +76,11 @@ func TestNewHandler(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	KOExpectedResp := errorResponse{
-		Code:    http.StatusInternalServerError,
-		Message: "internal server error",
+	KOExpectedResp := api_errors.InternalErr{
+		HttpCode: http.StatusInternalServerError,
+		Message:  "internal server error",
 	}
-	KOresponse := errorResponse{}
+	KOresponse := api_errors.InternalErr{}
 	NewHandler(KOHandler).ServeHTTP(w, KOreq)
 	if err := json.NewDecoder(w.Body).Decode(&KOresponse); err != nil {
 		t.Fatal(err)

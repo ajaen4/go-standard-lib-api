@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/ajaen4/go-standard-lib-api/internal/db"
+	"github.com/ajaen4/go-standard-lib-api/pkg/api_errors"
 )
 
 type ApiConfig struct {
@@ -54,7 +55,16 @@ func NewHandler(customHandler CustomHandler) http.HandlerFunc {
 		err := customHandler(w, r)
 		if err != nil {
 			log.Printf("Error: %s", err.Error())
-			respondWithError(w, err)
+			if clientErr, ok := err.(*api_errors.ClientErr); ok {
+				respondWithJSON(w, clientErr.HttpCode, clientErr)
+			} else {
+				respondWithJSON(w, http.StatusInternalServerError,
+					api_errors.InternalErr{
+						HttpCode: http.StatusInternalServerError,
+						Message:  "internal server error",
+					},
+				)
+			}
 		}
 	}
 }

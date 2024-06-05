@@ -2,38 +2,18 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
-	"github.com/ajaen4/go-standard-lib-api/internal/db"
+	"github.com/ajaen4/go-standard-lib-api/pkg/handlers"
 )
 
-var apiCfg *ApiConfig
-
-func TestMain(m *testing.M) {
-	db, err := db.NewDB("./database.json")
-	if err != nil {
-		log.Fatalf("Error initializing DB: %s", err)
-	}
-
-	apiCfg = &ApiConfig{
-		DB:        db,
-		JwtSecret: os.Getenv("JWT_SECRET"),
-		PolkaKey:  os.Getenv("POLKA_KEY"),
-	}
-
-	code := m.Run()
-
-	db.RemoveDB()
-	os.Exit(code)
-}
-
 func TestPostUser(t *testing.T) {
-	userReq := &UserReq{
+	apiCfg := setupTestCfg(t)
+
+	userReq := &handlers.UserReq{
 		Email:    "test@email.com",
 		Password: "testPassword",
 	}
@@ -54,8 +34,8 @@ func TestPostUser(t *testing.T) {
 		t.Fatal(err1)
 	}
 
-	response := UserResp{}
-	expected := UserResp{
+	response := handlers.UserResp{}
+	expected := handlers.UserResp{
 		Id:          1,
 		Email:       userReq.Email,
 		IsChirpyRed: false,
@@ -70,4 +50,6 @@ func TestPostUser(t *testing.T) {
 			expected,
 		)
 	}
+
+	tearDownTestCfg(t, apiCfg)
 }

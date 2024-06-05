@@ -9,6 +9,11 @@ type ClientErr struct {
 	Errors   map[string]string `json:"errors,omitempty"`
 }
 
+type InternalErr struct {
+	HttpCode int    `json:"code"`
+	Message  string `json:"message"`
+}
+
 func (err *ClientErr) Error() string {
 	if err.LogMess != "" {
 		return err.LogMess
